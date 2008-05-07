@@ -7,6 +7,7 @@ SQLite database.
 More information
 ================
 
+* [Original SVN site](http://code.google.com/p/mechanizations/)
 * [Original blog entry by Ravi](http://ravichodavarapu.blogspot.com/2007/07/mechanizations-towards-activerecord-for.html)
 
     
