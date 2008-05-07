@@ -41,8 +41,11 @@ var GearsConnector = function(database) {
 		return hash;
 	};
 	
-	var log = function(query) {
-		Logger.info('DB Query: ' + query);
+	var log = function(query, logType) {
+	  if ("Logger" in window && Logger) {
+	    logType = logType || 'info';
+		  Logger[logType]('DB Query: ' + query);
+	  }
 	};
 	
 	var tableExists = function(name) {
@@ -75,7 +78,7 @@ var GearsConnector = function(database) {
 			resultSet.next();
 		}
 		
-		Logger.info('DB Result: ' + results.length + ' row(s) returned.');
+		log('DB Result: ' + results.length + ' row(s) returned.');
 		if (options && options['headers']) results.unshift(resultColumns);
 		return results;
 	};
@@ -156,7 +159,7 @@ var GearsConnector = function(database) {
 		
 		if (result) {
 			this.insert('_migrations', {'id': id, 'version': version}, {replace: true});
-			Logger.info('DB Migrated: Migrations Set: ' + id + ', Version: ' + version);
+			log('DB Migrated: Migrations Set: ' + id + ', Version: ' + version);
 			return true;
 		} else {
 			Logger.error('DB Migration Failed: Migrations Set: ' + id + 
@@ -169,11 +172,11 @@ var GearsConnector = function(database) {
 		if (!gears) {
 			gears = google.gears.factory.create('beta.database', '1.0');
 		} else {
-			Logger.info('DB Close');
+			log('DB Close');
 			gears.close();
 		}
 		
-		Logger.info('DB Open: ' + database);
+		log('DB Open: ' + database);
 		gears.open(database);
 	};
 	

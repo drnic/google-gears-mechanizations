@@ -1,0 +1,223 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>JavaScript unit test file</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <script src="../assets/jsunittest.js" type="text/javascript"></script>
+  <script src="../../src/ext/jquery.js"></script>
+  <script src="../../src/ext/gears_init.js"></script>
+  <script src="../../src/jquery.mechanizations.util.js"></script>
+  <script src="../../src/gears_connector.js" type="text/javascript"></script>
+  
+  <link rel="stylesheet" href="../assets/unittest.css" type="text/css" />
+</head>
+<body>
+
+<div id="content">
+
+  <div id="header">
+    <h1>JavaScript unit test file</h1>
+    <p>
+      This file tests <strong>gears_connector.js</strong>.
+    </p>
+  </div>
+
+  <!-- Log output (one per Runner, via {testLog: "testlog"} option)-->
+  <div id="testlog"></div>
+  
+  <!-- Put sample/test html here -->
+  <div id="sample"></div>
+</div>
+
+<script type="text/javascript">
+// <![CDATA[
+
+  new Test.Unit.Runner({
+    // replace this with your real tests
+    setup: function() {
+  		this.connector = new GearsConnector('test');
+  		this.connector.dropTable('test_table');
+  		this.connector.dropTable('test_table1');
+  		this.connector.dropTable('_migrations');
+    },
+    
+  	testCreateTable: function() {with(this) {
+  		connector.createTable('test_table', {id: 'INTEGER', name: 'TEXT'});
+  		assertEnumEqual(connector.columns('test_table'), ['id', 'name']);
+  		connector.createTable('test_table', {id: 'INTEGER', name: 'TEXT', col: 'TEXT'});
+  		assertEnumEqual(connector.columns('test_table'), ['id', 'name']);
+  		connector.createTable('test_table', {id: 'INTEGER', name: 'TEXT', col: 'TEXT'}, {force: true});
+  		assertEnumEqual(connector.columns('test_table'), ['id', 'name', 'col']);
+  		connector.dropTable('test_table');
+  	}},
+
+  	testColumns: function() {with(this) {
+  		connector.createTable('test_table', {id: 'INTEGER', name: 'TEXT'});
+  		assertEnumEqual(connector.columns('test_table'), ['id', 'name']);
+  		connector.dropTable('test_table');
+  	}},
+
+  	testDeleteRows: function() {with(this) {
+  		connector.createTable('test_table', {id: 'INTEGER PRIMARY KEY', name: 'TEXT'});
+  		connector.insert('test_table', [0, 'R1']);
+  		connector.insert('test_table', [1, 'R2']);
+  		connector.deleteRows('test_table');
+  		assertEqual(connector.select('test_table').length, 0);
+  		connector.insert('test_table', [0, 'R1']);
+  		connector.insert('test_table', [1, 'R2']);
+  		connector.deleteRows('test_table', {where: ['id=0']});
+  		assertEqual(connector.select('test_table').length, 1);
+  		connector.dropTable('test_table');
+  	}},
+
+  	testDropTable: function() {with(this) {
+  		connector.createTable('test_table', {id: 'INTEGER', name: 'TEXT'});
+  		connector.dropTable('test_table');
+  		try {
+  		  connector.columns('test_table'); 
+  		  assert(true, 'Should fail to find columns for dropped table')
+  		} catch(exception) {}
+  		try {
+  		  connector.dropTable('test_table', {ensureExists: true});
+  		  assert(true, 'Should fail to re-drop a dropped table')
+  		} catch(exception) {}
+  	}},
+
+  	testExecute: function() {with(this) {
+  		assertEqual(connector.execute('CREATE TABLE IF NOT EXISTS test_table (id INTEGER)'), undefined);
+  		connector.execute('INSERT INTO test_table VALUES (0)');
+  		connector.execute('INSERT INTO test_table VALUES (1)');
+  		assertEqual(connector.execute('SELECT * FROM test_table').length, 2);
+  		assertEqual(connector.execute(['SELECT * FROM test_table WHERE id=0']).length, 1);
+  		assertEqual(connector.execute(['SELECT * FROM test_table WHERE id=?', 1]).length, 1);
+  		assertEqual(connector.execute('DROP TABLE test_table'), undefined);
+  	}},
+
+  	testInsert: function() {with(this) {
+  		connector.createTable('test_table', {id: 'INTEGER PRIMARY KEY', name: 'TEXT'});
+  		connector.insert('test_table', [0, 'R1']);
+  		assertHashEqual(connector.select('test_table', {where: ['id=0']})[0], {id: 0, name: 'R1'});
+  		connector.insert('test_table', {id: 1, name: 'R2'});
+  		assertHashEqual(connector.select('test_table', {where: ['id=1']})[0], {id: 1, name: 'R2'});
+  		connector.insert('test_table', {id: 1, name: 'R3'}, {replace: true});
+  		assertHashEqual(connector.select('test_table', {where: ['id=1']})[0], {id: 1, name: 'R3'});
+  		connector.dropTable('test_table');
+  	}},
+
+  	testOpen: function() {with(this) {
+  		connector.open('test2');
+  		connector.open('test');
+  	}},
+
+  	testMigrate: function() {with(this) {
+  		var migrations = [
+  			{ // version 0
+  				up: function(c) {
+  					c.createTable('test_table', {id: 'INTEGER', name: 'TEXT'});
+  				},
+  				down: function(c) {
+  					c.dropTable('test_table');
+  				}
+  			},
+  			{ // version 1
+  				up: function(c) {
+  					c.createTable('test_table1', {id: 'INTEGER'});
+  				},
+  				down: function(c) {
+  					c.dropTable('test_table1');
+  				}
+  			},
+  			{ // version 2
+  				up: function(c) {
+  					c.dropTable('test_table');
+  					c.dropTable('test_table1');
+  				},
+  				down: function(c) {
+  					c.createTable('test_table', {id: 'INTEGER', name: 'TEXT'});
+  					c.createTable('test_table1', {id: 'INTEGER'});
+  				}
+  			},
+  			{ // version 3
+  				up: function(c) {
+  					c.renameTable('test_table', 'test_table1');
+  				},
+  				down: function(c) {
+  					c.renameTable('test_table1', 'test_table');
+  				}
+  			}
+  		];
+
+  		connector.migrate(migrations, 0);
+  		assertEnumEqual(connector.tables(), ['_migrations','test_table']);
+  		assertEnumEqual(connector.select('_migrations', ['version'], 
+  			{where: ['id="default"']})[0]['_migrations_version'], 0);
+  		connector.migrate(migrations, 2);
+  		assertEnumEqual(connector.tables(), ['_migrations']);
+  		assertEnumEqual(connector.select('_migrations', ['version'], 
+  			{where: ['id="default"']})[0]['_migrations_version'], 2);
+  		connector.migrate(migrations, -1);
+  		assertEnumEqual(connector.tables(), ['_migrations']);
+  		assertEnumEqual(connector.select('_migrations', ['version'], 
+  			{where: ['id="default"']})[0]['_migrations_version'], -1);
+  		connector.migrate(migrations, 3);
+  		assertEnumEqual(connector.tables(), ['_migrations']);
+  		assertEnumEqual(connector.select('_migrations', ['version'], 
+  			{where: ['id="default"']})[0]['_migrations_version'], -1);
+  	}},
+
+  	testRenameTable: function() {with(this) {
+  		connector.createTable('test_table', {id: 'INTEGER', name: 'TEXT'});
+  		connector.renameTable('test_table', 'test_table1');
+  		assertEnumEqual(connector.columns('test_table1'), ['id', 'name']);
+  		connector.dropTable('test_table1');
+  	}},
+
+  	testSelect: function() {with(this) {
+  		connector.createTable('test_table', {id: 'INTEGER', name: 'TEXT'});
+  		connector.insert('test_table', [0, 'R1']);
+  		connector.insert('test_table', [1, 'R2']);
+  		connector.insert('test_table', [2, 'R3']);
+  		assertEqual(connector.select('test_table').length, 3);
+  		assertEqual($.keys(connector.select('test_table', [])[0]).length, 2);
+  		assertEqual($.keys(connector.select('test_table', ['*'])[0]).length, 2);
+  		assertEqual(connector.select('test_table', {headers: true}).length, 4);
+  		assertEqual(connector.select('test_table', {where: ['id=?', 0]}).length, 1);
+  		assertEqual(connector.select(
+  			'test_table', ['id'], {where: ['id>?', 0], limit: 1})[0]['test_table_id'], 1);
+  		assertEqual(connector.select(
+  			'test_table', {where: ['id>?', 0], limit: 1, offset: 1})[0]['id'], 2);
+  		assertEqual(connector.select(
+  			'test_table', ['id'], {orderBy: 'id DESC'})[0]['test_table_id'], 2);
+  		connector.dropTable('test_table');
+  	}},
+
+  	testTables: function() {with(this) {
+  		connector.createTable('test_table', {id: 'INTEGER', name: 'TEXT'});
+  		connector.createTable('test_table1', {id: 'INTEGER', name: 'TEXT'});
+  		assertEnumNotEqual(connector.tables(), ['_migrations','test_table', 'test_table1']);
+  		assertEnumEqual(connector.tables(), ['test_table', 'test_table1']);
+  		connector.dropTable('test_table1');
+  		connector.dropTable('test_table');
+  	}},
+
+  	testTransaction: function() {with(this) {
+  		connector.createTable('test_table', {id: 'INTEGER PRIMARY KEY', name: 'TEXT'});
+  		connector.transaction(function(c) {
+  			c.insert('test_table', [0, 'R0']);
+  			c.insert('test_table', [1, 'R1']);
+  		});
+  		assertEqual(connector.select('test_table').length, 2);
+  		connector.transaction(function(c) {
+  			c.insert('test_table', [2, 'R2']);
+  			c.insert('test_table', [3, 'R3']);
+  			c.insert('test_table', [3, 'R3']);
+  		});
+  		assertEqual(connector.select('test_table').length, 2);
+  		connector.dropTable('test_table');
+  	}
+  }});
+// ]]>
+</script>
+</body>
+</html>
