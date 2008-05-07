@@ -4,6 +4,30 @@ Google Gears Mechanizations
 This JavaScript project provides an ActiveRecord-esque API for the Google Gears
 SQLite database.
 
+Usage
+=====
+
+    var migrations = [
+      { // version 0
+        up: function(c) {
+          c.createTable('test_table', {id: 'INTEGER', name: 'TEXT'});
+        },
+        down: function(c) {
+          c.dropTable('test_table');
+        }
+      },
+      { // version 1
+        up: function(c) {
+          c.createTable('test_table1', {id: 'INTEGER'});
+        },
+        down: function(c) {
+          c.dropTable('test_table1');
+        }
+      }
+    ];
+    connector = new GearsConnector('test');
+    connector.migrate(migrations, 1);
+
 More information
 ================
 
