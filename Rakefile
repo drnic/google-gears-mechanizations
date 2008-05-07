@@ -12,7 +12,7 @@ require 'rake/packagetask'
 
 $:.unshift File.dirname(__FILE__) + "/lib"
 
-APP_VERSION  = '0.0.1'
+APP_VERSION  = File.open('History.txt').read.split("\n").first.match(/\b[\d\.]+\b/)[0]
 APP_NAME     = 'mechanizations'
 RUBYFORGE_PROJECT = APP_NAME
 APP_FILE_NAME= "#{APP_NAME}.js"
