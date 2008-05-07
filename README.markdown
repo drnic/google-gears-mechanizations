@@ -10,18 +10,18 @@ Usage
     var migrations = [
       { // version 0
         up: function(c) {
-          c.createTable('test_table', {id: 'INTEGER', name: 'TEXT'});
+          c.createTable('people', {id: 'INTEGER', name: 'TEXT'});
         },
         down: function(c) {
-          c.dropTable('test_table');
+          c.dropTable('people');
         }
       },
       { // version 1
         up: function(c) {
-          c.createTable('test_table1', {id: 'INTEGER'});
+          c.createTable('addresses', {id: 'INTEGER', person_id: 'INTEGER', address: 'TEXT});
         },
         down: function(c) {
-          c.dropTable('test_table1');
+          c.dropTable('addresses');
         }
       }
     ];
